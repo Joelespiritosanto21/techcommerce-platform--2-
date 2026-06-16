@@ -88,6 +88,31 @@ model Installation {
   adminEmail          String?
   adminPassword       String?
   
+  // Email Server Configuration
+  mailServerEnabled   Boolean @default(false)
+  mailHostname        String?
+  mailDomain          String?
+  mailMaxAccounts     Int?
+  mailMaxStorageGB    Int?
+  mailSpamEnabled     Boolean @default(true)
+  mailAntivirusEnabled Boolean @default(true)
+  mailGreylisting     Boolean @default(true)
+  
+  // Hosting Server Configuration
+  hostingServerEnabled Boolean @default(false)
+  hostingWebServer    String?  // nginx, apache
+  hostingPhpVersions  String?  // JSON array
+  hostingNodeVersions String?  // JSON array
+  hostingSslProvider  String?  // letsencrypt, custom
+  hostingBackupEnabled Boolean @default(true)
+  hostingBackupPath   String?
+  
+  // DNS Configuration
+  dnsEnabled          Boolean @default(false)
+  dnsProvider         String?  // cloudflare, route53, custom
+  dnsApiKey           String?
+  dnsApiSecret       String?
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -168,6 +193,8 @@ model User {
   vpsServices     VPSService[]
   hostingServices HostingService[]
   domainServices  DomainService[]
+  mailAccounts    MailAccount[]
+  ftpAccounts     FTPAccount[]
 }
 
 model Session {
@@ -1434,6 +1461,8 @@ model HostingService {
   
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan            HostingPlan? @relation(fields: [planId], references: [id])
+  mailDomains     MailDomain[]
+  serverWebsite   ServerWebsite?
 }
 
 // ============================================
@@ -1475,4 +1504,439 @@ model DomainService {
   updatedAt       DateTime @updatedAt
   
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// EMAIL SERVICES (Postfix + Dovecot)
+// ============================================
+
+model MailDomain {
+  id              String   @id @default(cuid())
+  domain          String   @unique
+  hostingServiceId String?
+  
+  // DNS Status
+  mxValid         Boolean  @default(false)
+  spfValid        Boolean  @default(false)
+  dkimValid       Boolean  @default(false)
+  dmarcValid      Boolean  @default(false)
+  
+  // DKIM Keys
+  dkimSelector    String?
+  dkimPublicKey   String?
+  dkimPrivateKey  String?
+  
+  // Limits
+  maxAccounts     Int      @default(10)
+  maxAliases      Int      @default(20)
+  maxStorageGB    Int      @default(10)
+  
+  // Status
+  status          String   @default("pending") // pending, active, suspended
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  hostingService  HostingService? @relation(fields: [hostingServiceId], references: [id])
+  accounts        MailAccount[]
+  aliases         MailAlias[]
+  mailingLists    MailMailingList[]
+}
+
+model MailAccount {
+  id              String   @id @default(cuid())
+  mailDomainId    String
+  userId          String?  // Customer owner
+  
+  // Account
+  email           String   @unique
+  username        String   // local part
+  password        String   // encrypted
+  
+  // Quota
+  quotaMB         Int      @default(1000)
+  usedMB          Float    @default(0)
+  
+  // Settings
+  spamFilterEnabled Boolean @default(true)
+  spamScore       Int      @default(5) // 0-10, higher = more aggressive
+  autoReplyEnabled Boolean @default(false)
+  autoReplySubject String?
+  autoReplyMessage String?
+  
+  // Forwarding
+  forwardEnabled  Boolean  @default(false)
+  forwardTo       String?  // JSON array of emails
+  forwardKeepCopy Boolean  @default(true)
+  
+  // Stats
+  totalMessages   Int      @default(0)
+  totalSizeMB     Float    @default(0)
+  lastLoginAt     DateTime?
+  
+  // Status
+  status          String   @default("active")
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  mailDomain      MailDomain @relation(fields: [mailDomainId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id])
+}
+
+model MailAlias {
+  id              String   @id @default(cuid())
+  mailDomainId    String
+  
+  // Alias
+  source          String   @unique // full email (alias@domain.com)
+  destination     String   // JSON array of destination emails
+  
+  // Status
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  mailDomain      MailDomain @relation(fields: [mailDomainId], references: [id], onDelete: Cascade)
+}
+
+model MailMailingList {
+  id              String   @id @default(cuid())
+  mailDomainId    String
+  
+  // List
+  address         String   @unique // list@domain.com
+  name            String
+  description     String?
+  
+  // Settings
+  isModerated     Boolean  @default(false)
+  allowSubscriptions Boolean @default(false)
+  archiveEnabled  Boolean  @default(false)
+  
+  // Members (JSON array)
+  members         String?
+  
+  // Status
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  mailDomain      MailDomain @relation(fields: [mailDomainId], references: [id], onDelete: Cascade)
+}
+
+model MailServerConfig {
+  id              String   @id @default(cuid())
+  
+  // Server Settings
+  hostname        String?
+  domain          String?
+  
+  // Postfix
+  smtpPort        Int      @default(25)
+  smtpsPort       Int      @default(465)
+  submissionPort  Int      @default(587)
+  maxMessageSizeMB Int     @default(50)
+  smtpdSaslAuth   Boolean  @default(true)
+  smtpdTls        Boolean  @default(true)
+  
+  // Dovecot
+  imapPort        Int      @default(143)
+  imapsPort       Int      @default(993)
+  pop3Port        Int      @default(110)
+  pop3sPort       Int      @default(995)
+  
+  // SpamAssassin
+  spamEnabled     Boolean  @default(true)
+  spamScore       Int      @default(5)
+  spamSubjectTag  String   @default("[SPAM]")
+  spamQuarantine  Boolean  @default(true)
+  
+  // ClamAV
+  antivirusEnabled Boolean @default(true)
+  
+  // Greylisting
+  greylistingEnabled Boolean @default(true)
+  
+  // Rate Limiting
+  maxMessagesPerHour Int   @default(100)
+  maxRecipientsPerMessage Int @default(50)
+  
+  // Status
+  status          String   @default("pending")
+  lastRestartAt   DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MailQueue {
+  id              String   @id @default(cuid())
+  
+  // Message
+  messageId       String
+  fromAddress     String
+  toAddress        String
+  subject         String?
+  
+  // Status
+  status          String   @default("queued") // queued, sending, sent, failed, bounced
+  attempts        Int      @default(0)
+  lastAttemptAt   DateTime?
+  sentAt          DateTime?
+  error           String?
+  
+  // Size
+  sizeKB          Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MailLog {
+  id              String   @id @default(cuid())
+  
+  // Message
+  messageId       String?
+  fromAddress     String
+  toAddress        String
+  
+  // Action
+  action          String   // sent, received, bounced, rejected, quarantined
+  result          String   // success, failure
+  
+  // Details
+  subject         String?
+  sizeKB          Float?
+  spamScore       Int?
+  virusDetected   Boolean  @default(false)
+  
+  // Connection
+  clientIp        String?
+  serverIp        String?
+  
+  // Error
+  error           String?
+  
+  createdAt       DateTime @default(now())
+}
+
+// ============================================
+// SERVER MANAGEMENT
+// ============================================
+
+model Server {
+  id              String   @id @default(cuid())
+  name            String
+  hostname        String   @unique
+  ipAddress       String
+  publicIp        String?
+  
+  // Type
+  type            String   @default("hosting") // hosting, vps, mail, database, backup
+  
+  // Specs
+  cpuCores        Int?
+  ramGB           Int?
+  storageGB       Int?
+  
+  // Status
+  status          String   @default("pending") // pending, active, maintenance, offline
+  uptime          Int      @default(0) // seconds
+  loadAverage     Float?
+  
+  // Monitoring
+  cpuUsage        Float?
+  memoryUsage     Float?
+  diskUsage       Float?
+  lastCheckAt     DateTime?
+  
+  // Services
+  services        String? // JSON array of running services
+  
+  // Agent
+  agentKey        String?
+  agentLastSeen   DateTime?
+  agentVersion    String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  websites        ServerWebsite[]
+  databases       ServerDatabase[]
+  backups         ServerBackup[]
+  sslCertificates SSLSertificate[]
+  ftpAccounts     FTPAccount[]
+}
+
+model ServerWebsite {
+  id              String   @id @default(cuid())
+  serverId        String
+  hostingServiceId String?  @unique
+  
+  // Domain
+  domain          String   @unique
+  aliases         String?  // JSON array
+  
+  // Type
+  type            String   @default("php") // php, nodejs, python, static, reverse-proxy
+  
+  // Paths
+  documentRoot    String
+  logPath         String?
+  
+  // PHP
+  phpVersion      String?
+  
+  // SSL
+  sslEnabled      Boolean  @default(false)
+  sslAutoRenew    Boolean  @default(true)
+  sslExpiry       DateTime?
+  
+  // Nginx/Apache
+  webServer       String   @default("nginx") // nginx, apache
+  configPath      String?
+  
+  // Status
+  status          String   @default("active")
+  
+  // Resources
+  cpuUsage        Float?
+  memoryUsage     Float?
+  diskUsageMB     Float?
+  bandwidthMB     Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  hostingService  HostingService? @relation(fields: [hostingServiceId], references: [id])
+  backups         ServerBackup[]
+  sslCertificates SSLSertificate[]
+  ftpAccounts     FTPAccount[]
+}
+
+model ServerDatabase {
+  id              String   @id @default(cuid())
+  serverId        String
+  
+  // Database
+  name            String
+  type            String   @default("mysql") // mysql, postgresql, mongodb, redis
+  charset         String?
+  collation       String?
+  
+  // User
+  username        String
+  password        String   // encrypted
+  
+  // Access
+  allowedHosts    String?  // JSON array
+  
+  // Size
+  sizeMB          Float?
+  
+  // Status
+  status          String   @default("active")
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  backups         ServerBackup[]
+}
+
+model ServerBackup {
+  id              String   @id @default(cuid())
+  serverId        String
+  websiteId       String?
+  databaseId      String?
+  
+  // Backup
+  type            String   // full, files, database
+  path            String
+  sizeMB          Float?
+  
+  // Retention
+  retentionDays   Int      @default(30)
+  
+  // Status
+  status          String   @default("pending") // pending, running, completed, failed
+  startedAt       DateTime?
+  completedAt     DateTime?
+  error           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  website         ServerWebsite? @relation(fields: [websiteId], references: [id])
+  database        ServerDatabase? @relation(fields: [databaseId], references: [id])
+}
+
+model SSLSertificate {
+  id              String   @id @default(cuid())
+  serverId        String
+  websiteId       String?
+  
+  // Certificate
+  domain          String
+  provider        String   @default("letsencrypt") // letsencrypt, custom, purchased
+  
+  // Files
+  certPath        String?
+  keyPath         String?
+  chainPath       String?
+  
+  // Dates
+  issuedAt        DateTime?
+  expiresAt       DateTime?
+  
+  // Auto-renewal
+  autoRenew       Boolean  @default(true)
+  lastRenewAt     DateTime?
+  nextRenewAt     DateTime?
+  
+  // Status
+  status          String   @default("pending") // pending, active, expired, failed
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  website         ServerWebsite? @relation(fields: [websiteId], references: [id])
+}
+
+model FTPAccount {
+  id              String   @id @default(cuid())
+  serverId        String?
+  websiteId       String?
+  userId          String?
+  
+  // Account
+  username        String   @unique
+  password        String   // encrypted
+  
+  // Access
+  homeDirectory   String
+  permissions     String   @default("read-write") // read-only, read-write, full
+  
+  // Quota
+  quotaMB         Int?
+  usedMB          Float?
+  
+  // Status
+  status          String   @default("active")
+  lastLoginAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  server          Server?  @relation(fields: [serverId], references: [id])
+  website         ServerWebsite? @relation(fields: [websiteId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 
 export async function GET() {
   try {
@@ -81,7 +82,6 @@ export async function POST(request: NextRequest) {
       }
       
       // Create admin user
-      const bcrypt = require('bcryptjs')
       const hashedPassword = await bcrypt.hash(password, 10)
       
       const user = await db.user.create({

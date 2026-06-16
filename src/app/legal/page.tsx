@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -11,12 +11,8 @@ import {
 import Link from 'next/link'
 
 export default function LegalPage() {
-  const [currentPage, setCurrentPage] = useState<string>('')
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    setCurrentPage(params.get('page') || '')
-  }, [])
+  const searchParams = useSearchParams()
+  const currentPage = searchParams.get('page') || ''
 
   return (
     <div className="min-h-screen bg-background">
