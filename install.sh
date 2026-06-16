@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # TechCommerce Platform - Automatic Installer
-# Version: 3.0 - Complete Installation with Email Server
+# Version: 4.0 - Complete Installation with Database Server Auto-Install
 # Author: TechCommerce Team
 
 set -e
@@ -27,7 +27,7 @@ echo "║      ██║   ███████╗██║  ██║╚██
 echo "║      ╚═╝   ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝                      ║"
 echo "║                                                                    ║"
 echo "║   Ecommerce + CRM + ERP + Email Server Platform                   ║"
-echo "║   Instalador Automático v3.0                                      ║"
+echo "║   Instalador Automático v4.0                                      ║"
 echo "║                                                                    ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -215,25 +215,55 @@ print_section "Configuração da Base de Dados"
 
 echo -e "${YELLOW}Base de Dados${NC}"
 echo "Opções disponíveis:"
-echo "  1) SQLite (desenvolvimento)"
-echo "  2) MySQL"
-echo "  3) MariaDB"
-echo "  4) PostgreSQL"
-read -p "Escolha a base de dados [1-4]: " DB_CHOICE
+echo "  1) SQLite (desenvolvimento - sem instalação necessária)"
+echo "  2) MySQL (instalar automaticamente)"
+echo "  3) MariaDB (instalar automaticamente)"
+echo "  4) PostgreSQL (instalar automaticamente)"
+echo "  5) Usar servidor existente (MySQL/PostgreSQL externo)"
+read -p "Escolha a base de dados [1-5]: " DB_CHOICE
+
+INSTALL_DB_SERVER=false
 
 case $DB_CHOICE in
     1)
         DB_TYPE="sqlite"
         DATABASE_URL="file:./db/techcommerce.db"
+        print_info "SQLite não requer configuração adicional"
         ;;
     2)
         DB_TYPE="mysql"
-        read -p "MySQL Host [localhost]: " DB_HOST
-        read -p "MySQL Port [3306]: " DB_PORT
-        read -p "MySQL Database [techcommerce]: " DB_NAME
-        read -p "MySQL User: " DB_USER
-        read -s -p "MySQL Password: " DB_PASSWORD
-        echo
+        if [ "$IS_ROOT" = true ]; then
+            read -p "Instalar MySQL Server automaticamente? (y/n) [y]: " INSTALL_MYSQL
+            if [ "$INSTALL_MYSQL" = "y" ] || [ "$INSTALL_MYSQL" = "Y" ] || [ -z "$INSTALL_MYSQL" ]; then
+                INSTALL_DB_SERVER=true
+                DB_HOST="localhost"
+                DB_PORT="3306"
+                DB_NAME="techcommerce"
+                read -p "Root Password para MySQL (deixe vazio para gerar automaticamente): " DB_ROOT_PASSWORD
+                if [ -z "$DB_ROOT_PASSWORD" ]; then
+                    DB_ROOT_PASSWORD=$(openssl rand -base64 16)
+                    print_info "Password root gerada: $DB_ROOT_PASSWORD"
+                fi
+                DB_USER="techcommerce"
+                DB_PASSWORD=$(openssl rand -base64 16)
+                print_info "Utilizador da aplicação: $DB_USER"
+                print_info "Password da aplicação: $DB_PASSWORD"
+            else
+                read -p "MySQL Host [localhost]: " DB_HOST
+                read -p "MySQL Port [3306]: " DB_PORT
+                read -p "MySQL Database [techcommerce]: " DB_NAME
+                read -p "MySQL User: " DB_USER
+                read -s -p "MySQL Password: " DB_PASSWORD
+                echo
+            fi
+        else
+            read -p "MySQL Host [localhost]: " DB_HOST
+            read -p "MySQL Port [3306]: " DB_PORT
+            read -p "MySQL Database [techcommerce]: " DB_NAME
+            read -p "MySQL User: " DB_USER
+            read -s -p "MySQL Password: " DB_PASSWORD
+            echo
+        fi
         DB_HOST=${DB_HOST:-localhost}
         DB_PORT=${DB_PORT:-3306}
         DB_NAME=${DB_NAME:-techcommerce}
@@ -241,12 +271,38 @@ case $DB_CHOICE in
         ;;
     3)
         DB_TYPE="mariadb"
-        read -p "MariaDB Host [localhost]: " DB_HOST
-        read -p "MariaDB Port [3306]: " DB_PORT
-        read -p "MariaDB Database [techcommerce]: " DB_NAME
-        read -p "MariaDB User: " DB_USER
-        read -s -p "MariaDB Password: " DB_PASSWORD
-        echo
+        if [ "$IS_ROOT" = true ]; then
+            read -p "Instalar MariaDB Server automaticamente? (y/n) [y]: " INSTALL_MARIADB
+            if [ "$INSTALL_MARIADB" = "y" ] || [ "$INSTALL_MARIADB" = "Y" ] || [ -z "$INSTALL_MARIADB" ]; then
+                INSTALL_DB_SERVER=true
+                DB_HOST="localhost"
+                DB_PORT="3306"
+                DB_NAME="techcommerce"
+                read -p "Root Password para MariaDB (deixe vazio para gerar automaticamente): " DB_ROOT_PASSWORD
+                if [ -z "$DB_ROOT_PASSWORD" ]; then
+                    DB_ROOT_PASSWORD=$(openssl rand -base64 16)
+                    print_info "Password root gerada: $DB_ROOT_PASSWORD"
+                fi
+                DB_USER="techcommerce"
+                DB_PASSWORD=$(openssl rand -base64 16)
+                print_info "Utilizador da aplicação: $DB_USER"
+                print_info "Password da aplicação: $DB_PASSWORD"
+            else
+                read -p "MariaDB Host [localhost]: " DB_HOST
+                read -p "MariaDB Port [3306]: " DB_PORT
+                read -p "MariaDB Database [techcommerce]: " DB_NAME
+                read -p "MariaDB User: " DB_USER
+                read -s -p "MariaDB Password: " DB_PASSWORD
+                echo
+            fi
+        else
+            read -p "MariaDB Host [localhost]: " DB_HOST
+            read -p "MariaDB Port [3306]: " DB_PORT
+            read -p "MariaDB Database [techcommerce]: " DB_NAME
+            read -p "MariaDB User: " DB_USER
+            read -s -p "MariaDB Password: " DB_PASSWORD
+            echo
+        fi
         DB_HOST=${DB_HOST:-localhost}
         DB_PORT=${DB_PORT:-3306}
         DB_NAME=${DB_NAME:-techcommerce}
@@ -254,16 +310,66 @@ case $DB_CHOICE in
         ;;
     4)
         DB_TYPE="postgresql"
-        read -p "PostgreSQL Host [localhost]: " DB_HOST
-        read -p "PostgreSQL Port [5432]: " DB_PORT
-        read -p "PostgreSQL Database [techcommerce]: " DB_NAME
-        read -p "PostgreSQL User: " DB_USER
-        read -s -p "PostgreSQL Password: " DB_PASSWORD
-        echo
+        if [ "$IS_ROOT" = true ]; then
+            read -p "Instalar PostgreSQL Server automaticamente? (y/n) [y]: " INSTALL_PG
+            if [ "$INSTALL_PG" = "y" ] || [ "$INSTALL_PG" = "Y" ] || [ -z "$INSTALL_PG" ]; then
+                INSTALL_DB_SERVER=true
+                DB_HOST="localhost"
+                DB_PORT="5432"
+                DB_NAME="techcommerce"
+                DB_USER="techcommerce"
+                DB_PASSWORD=$(openssl rand -base64 16)
+                print_info "Utilizador da aplicação: $DB_USER"
+                print_info "Password da aplicação: $DB_PASSWORD"
+            else
+                read -p "PostgreSQL Host [localhost]: " DB_HOST
+                read -p "PostgreSQL Port [5432]: " DB_PORT
+                read -p "PostgreSQL Database [techcommerce]: " DB_NAME
+                read -p "PostgreSQL User: " DB_USER
+                read -s -p "PostgreSQL Password: " DB_PASSWORD
+                echo
+            fi
+        else
+            read -p "PostgreSQL Host [localhost]: " DB_HOST
+            read -p "PostgreSQL Port [5432]: " DB_PORT
+            read -p "PostgreSQL Database [techcommerce]: " DB_NAME
+            read -p "PostgreSQL User: " DB_USER
+            read -s -p "PostgreSQL Password: " DB_PASSWORD
+            echo
+        fi
         DB_HOST=${DB_HOST:-localhost}
         DB_PORT=${DB_PORT:-5432}
         DB_NAME=${DB_NAME:-techcommerce}
         DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
+        ;;
+    5)
+        echo -e "\n${CYAN}Servidor Existente${NC}"
+        echo "Escolha o tipo de servidor:"
+        echo "  1) MySQL/MariaDB"
+        echo "  2) PostgreSQL"
+        read -p "Tipo [1-2]: " EXISTING_DB_TYPE
+        
+        if [ "$EXISTING_DB_TYPE" = "2" ]; then
+            DB_TYPE="postgresql"
+        else
+            DB_TYPE="mysql"
+        fi
+        
+        read -p "Host [localhost]: " DB_HOST
+        read -p "Port [${DB_TYPE:-postgresql} = 5432, mysql = 3306]: " DB_PORT
+        read -p "Database [techcommerce]: " DB_NAME
+        read -p "User: " DB_USER
+        read -s -p "Password: " DB_PASSWORD
+        echo
+        
+        DB_HOST=${DB_HOST:-localhost}
+        if [ "$DB_TYPE" = "postgresql" ]; then
+            DB_PORT=${DB_PORT:-5432}
+        else
+            DB_PORT=${DB_PORT:-3306}
+        fi
+        DB_NAME=${DB_NAME:-techcommerce}
+        DATABASE_URL="${DB_TYPE}://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
         ;;
     *)
         print_error "Opção inválida"
@@ -462,7 +568,7 @@ print_success "Dependências instaladas"
 print_info "Criando configuração..."
 cat > .env << EOF
 # TechCommerce Platform Configuration
-# Generated automatically by installer v3.0
+# Generated automatically by installer v4.0
 
 # Application
 NODE_ENV=production
@@ -544,32 +650,154 @@ elif [ "$DB_TYPE" = "mysql" ] || [ "$DB_TYPE" = "mariadb" ]; then
     sed -i 's/provider = "sqlite"/provider = "mysql"/' prisma/schema.prisma
 fi
 
-# Create database if it doesn't exist (PostgreSQL/MySQL)
-if [ "$DB_TYPE" = "postgresql" ]; then
-    print_info "Verificando se a base de dados PostgreSQL existe..."
-    DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null || echo "")
+# ==================== INSTALL DATABASE SERVER ====================
+if [ "$INSTALL_DB_SERVER" = true ] && [ "$IS_ROOT" = true ]; then
+    print_step "Instalando servidor de base de dados..."
     
-    if [ "$DB_EXISTS" != "1" ]; then
-        print_info "Criando base de dados PostgreSQL '$DB_NAME'..."
-        PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE \"$DB_NAME\" ENCODING 'UTF8'" || {
-            print_warning "Não foi possível criar a base de dados automaticamente"
-            print_info "Por favor, crie a base de dados manualmente: CREATE DATABASE $DB_NAME;"
-        }
-    else
-        print_success "Base de dados PostgreSQL '$DB_NAME' já existe"
+    detect_os
+    $PKG_UPDATE
+    
+    if [ "$DB_TYPE" = "postgresql" ]; then
+        print_info "Instalando PostgreSQL..."
+        
+        if [ "$OS" = "debian" ]; then
+            # Install PostgreSQL
+            $PKG_INSTALL postgresql postgresql-contrib
+            
+            # Start PostgreSQL
+            systemctl start postgresql
+            systemctl enable postgresql
+            
+            # Create user and database
+            print_info "Configurando utilizador e base de dados PostgreSQL..."
+            sudo -u postgres psql -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
+            sudo -u postgres psql -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";" 2>/dev/null || true
+            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO \"$DB_USER\";" 2>/dev/null || true
+            
+            # Allow password authentication
+            echo "host all all 127.0.0.1/32 md5" >> /etc/postgresql/*/main/pg_hba.conf
+            systemctl restart postgresql
+            
+        elif [ "$OS" = "redhat" ]; then
+            $PKG_INSTALL postgresql-server postgresql-contrib
+            postgresql-setup --initdb
+            systemctl start postgresql
+            systemctl enable postgresql
+            
+            sudo -u postgres psql -c "CREATE USER \"$DB_USER\" WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
+            sudo -u postgres psql -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";" 2>/dev/null || true
+            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO \"$DB_USER\";" 2>/dev/null || true
+        fi
+        
+        print_success "PostgreSQL instalado e configurado"
+        
+    elif [ "$DB_TYPE" = "mysql" ]; then
+        print_info "Instalando MySQL..."
+        
+        if [ "$OS" = "debian" ]; then
+            # Pre-configure root password
+            echo "mysql-server mysql-server/root_password password $DB_ROOT_PASSWORD" | debconf-set-selections
+            echo "mysql-server mysql-server/root_password_again password $DB_ROOT_PASSWORD" | debconf-set-selections
+            
+            $PKG_INSTALL mysql-server mysql-client
+            
+            systemctl start mysql
+            systemctl enable mysql
+            
+            # Create user and database
+            print_info "Configurando utilizador e base de dados MySQL..."
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+            
+        elif [ "$OS" = "redhat" ]; then
+            $PKG_INSTALL mysql-server mysql
+            systemctl start mysqld
+            systemctl enable mysqld
+            
+            # Secure installation
+            mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_ROOT_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+        fi
+        
+        print_success "MySQL instalado e configurado"
+        
+    elif [ "$DB_TYPE" = "mariadb" ]; then
+        print_info "Instalando MariaDB..."
+        
+        if [ "$OS" = "debian" ]; then
+            # Pre-configure root password
+            echo "mariadb-server mysql-server/root_password password $DB_ROOT_PASSWORD" | debconf-set-selections
+            echo "mariadb-server mysql-server/root_password_again password $DB_ROOT_PASSWORD" | debconf-set-selections
+            
+            $PKG_INSTALL mariadb-server mariadb-client
+            
+            systemctl start mariadb
+            systemctl enable mariadb
+            
+            # Create user and database
+            print_info "Configurando utilizador e base de dados MariaDB..."
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+            
+        elif [ "$OS" = "redhat" ]; then
+            $PKG_INSTALL mariadb-server mariadb
+            systemctl start mariadb
+            systemctl enable mariadb
+            
+            mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_ROOT_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';" 2>/dev/null || true
+            mysql -u root -p"$DB_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+        fi
+        
+        print_success "MariaDB instalado e configurado"
     fi
-elif [ "$DB_TYPE" = "mysql" ] || [ "$DB_TYPE" = "mariadb" ]; then
-    print_info "Verificando se a base de dados MySQL/MariaDB existe..."
-    DB_EXISTS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null | grep "$DB_NAME" || echo "")
-    
-    if [ -z "$DB_EXISTS" ]; then
-        print_info "Criando base de dados MySQL/MariaDB '$DB_NAME'..."
-        mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" || {
-            print_warning "Não foi possível criar a base de dados automaticamente"
-            print_info "Por favor, crie a base de dados manualmente: CREATE DATABASE $DB_NAME;"
-        }
-    else
-        print_success "Base de dados MySQL/MariaDB '$DB_NAME' já existe"
+fi
+
+# Create database if it doesn't exist (PostgreSQL/MySQL) - for existing servers
+if [ "$INSTALL_DB_SERVER" = false ] && [ "$DB_TYPE" != "sqlite" ]; then
+    if [ "$DB_TYPE" = "postgresql" ]; then
+        print_info "Verificando se a base de dados PostgreSQL existe..."
+        if command -v psql &> /dev/null; then
+            DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null || echo "")
+            
+            if [ "$DB_EXISTS" != "1" ]; then
+                print_info "Criando base de dados PostgreSQL '$DB_NAME'..."
+                PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE \"$DB_NAME\" ENCODING 'UTF8'" 2>/dev/null || {
+                    print_warning "Não foi possível criar a base de dados automaticamente"
+                    print_info "Por favor, crie a base de dados manualmente: CREATE DATABASE $DB_NAME;"
+                }
+            else
+                print_success "Base de dados PostgreSQL '$DB_NAME' já existe"
+            fi
+        else
+            print_warning "psql não está instalado. Por favor, crie a base de dados manualmente."
+        fi
+    elif [ "$DB_TYPE" = "mysql" ] || [ "$DB_TYPE" = "mariadb" ]; then
+        print_info "Verificando se a base de dados MySQL/MariaDB existe..."
+        if command -v mysql &> /dev/null; then
+            DB_EXISTS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null | grep "$DB_NAME" || echo "")
+            
+            if [ -z "$DB_EXISTS" ]; then
+                print_info "Criando base de dados MySQL/MariaDB '$DB_NAME'..."
+                mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" 2>/dev/null || {
+                    print_warning "Não foi possível criar a base de dados automaticamente"
+                    print_info "Por favor, crie a base de dados manualmente: CREATE DATABASE $DB_NAME;"
+                }
+            else
+                print_success "Base de dados MySQL/MariaDB '$DB_NAME' já existe"
+            fi
+        else
+            print_warning "mysql não está instalado. Por favor, crie a base de dados manualmente."
+        fi
     fi
 fi
 
