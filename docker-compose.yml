@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Main Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techcommerce-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/db/production.db
+    volumes:
+      - ./data/db:/app/db
+      - ./data/uploads:/app/uploads
+    depends_on:
+      - redis
+    networks:
+      - techcommerce-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: techcommerce-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - techcommerce-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: techcommerce-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - techcommerce-network
+
+networks:
+  techcommerce-network:
+    driver: bridge
+
+volumes:
+  redis-data:

@@ -1,0 +1,233 @@
+{
+  "en": {
+    "common": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "search": "Search",
+      "loading": "Loading...",
+      "success": "Success",
+      "error": "Error",
+      "confirm": "Confirm",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit",
+      "close": "Close",
+      "view": "View",
+      "download": "Download",
+      "print": "Print",
+      "export": "Export",
+      "import": "Import",
+      "filter": "Filter",
+      "clear": "Clear",
+      "all": "All",
+      "none": "None",
+      "yes": "Yes",
+      "no": "No",
+      "active": "Active",
+      "inactive": "Inactive",
+      "status": "Status",
+      "actions": "Actions",
+      "details": "Details",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "city": "City",
+      "country": "Country",
+      "date": "Date",
+      "amount": "Amount",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "discount": "Discount",
+      "price": "Price",
+      "quantity": "Quantity",
+      "description": "Description",
+      "notes": "Notes",
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "auth": {
+      "login": "Login",
+      "logout": "Logout",
+      "register": "Register",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "forgotPassword": "Forgot Password?",
+      "resetPassword": "Reset Password",
+      "rememberMe": "Remember me",
+      "loginTitle": "Sign in to your account",
+      "registerTitle": "Create an account",
+      "noAccount": "Don't have an account?",
+      "hasAccount": "Already have an account?"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome",
+      "overview": "Overview",
+      "recentActivity": "Recent Activity",
+      "quickActions": "Quick Actions",
+      "totalOrders": "Total Orders",
+      "activeRepairs": "Active Repairs",
+      "openTickets": "Open Tickets",
+      "revenue": "Revenue"
+    },
+    "products": {
+      "title": "Products",
+      "addProduct": "Add Product",
+      "productName": "Product Name",
+      "sku": "SKU",
+      "stock": "Stock",
+      "price": "Price",
+      "category": "Category",
+      "brand": "Brand",
+      "noProducts": "No products found"
+    },
+    "orders": {
+      "title": "Orders",
+      "newOrder": "New Order",
+      "orderNumber": "Order Number",
+      "customer": "Customer",
+      "status": "Status",
+      "paymentStatus": "Payment Status",
+      "total": "Total",
+      "pending": "Pending",
+      "processing": "Processing",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "noOrders": "No orders found"
+    },
+    "repairs": {
+      "title": "Repairs",
+      "newRepair": "New Repair",
+      "repairNumber": "Repair Number",
+      "customer": "Customer",
+      "device": "Device",
+      "brand": "Brand",
+      "model": "Model",
+      "serialNumber": "Serial Number",
+      "imei": "IMEI",
+      "fault": "Fault Description",
+      "status": "Status",
+      "priority": "Priority",
+      "noRepairs": "No repairs found"
+    },
+    "tickets": {
+      "title": "Support Tickets",
+      "newTicket": "New Ticket",
+      "ticketNumber": "Ticket Number",
+      "subject": "Subject",
+      "department": "Department",
+      "priority": "Priority",
+      "message": "Message",
+      "technical": "Technical Support",
+      "sales": "Sales",
+      "billing": "Billing",
+      "noTickets": "No tickets found"
+    }
+  },
+  "pt": {
+    "common": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "create": "Criar",
+      "search": "Pesquisar",
+      "loading": "A carregar...",
+      "success": "Sucesso",
+      "error": "Erro",
+      "confirm": "Confirmar",
+      "back": "Voltar",
+      "next": "Próximo",
+      "submit": "Submeter",
+      "close": "Fechar",
+      "view": "Ver",
+      "download": "Transferir",
+      "print": "Imprimir"
+    },
+    "auth": {
+      "login": "Entrar",
+      "logout": "Sair",
+      "register": "Registar",
+      "email": "Email",
+      "password": "Palavra-passe",
+      "forgotPassword": "Esqueceu a palavra-passe?"
+    },
+    "dashboard": {
+      "title": "Painel",
+      "welcome": "Bem-vindo",
+      "totalOrders": "Total de Encomendas",
+      "activeRepairs": "Reparações Ativas",
+      "revenue": "Receita"
+    },
+    "products": {
+      "title": "Produtos",
+      "addProduct": "Adicionar Produto",
+      "price": "Preço",
+      "stock": "Stock"
+    },
+    "orders": {
+      "title": "Encomendas",
+      "newOrder": "Nova Encomenda",
+      "status": "Estado",
+      "total": "Total"
+    },
+    "repairs": {
+      "title": "Reparações",
+      "newRepair": "Nova Reparação",
+      "device": "Dispositivo",
+      "status": "Estado"
+    }
+  },
+  "es": {
+    "common": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "create": "Crear",
+      "search": "Buscar",
+      "loading": "Cargando..."
+    },
+    "dashboard": {
+      "title": "Panel",
+      "welcome": "Bienvenido",
+      "totalOrders": "Total de Pedidos",
+      "revenue": "Ingresos"
+    },
+    "products": {
+      "title": "Productos",
+      "addProduct": "Añadir Producto",
+      "price": "Precio"
+    }
+  },
+  "fr": {
+    "common": {
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "create": "Créer",
+      "search": "Rechercher",
+      "loading": "Chargement..."
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "welcome": "Bienvenue",
+      "totalOrders": "Total des Commandes",
+      "revenue": "Revenus"
+    },
+    "products": {
+      "title": "Produits",
+      "addProduct": "Ajouter un Produit",
+      "price": "Prix"
+    }
+  }
+}
